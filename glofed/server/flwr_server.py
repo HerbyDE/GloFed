@@ -13,4 +13,4 @@ class FLServer(object):
 
 
 if __name__ == "__main__":
-    FLServer().start(ip="127.0.0.1", port=8080, rounds=3)
+    FLServer().start(ip="0.0.0.0", port=8080, rounds=3)

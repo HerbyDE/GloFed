@@ -11,10 +11,12 @@ import torch.nn as nn
 import numpy as np
 import pandas as pd
 
+from typing import Dict, Tuple, Any
 
-class CentralGloVe():
 
-    def __init__(self, trainset="training.1600000.processed.noemoticon.csv", testset="testdata.manual.2009.06.14.csv", embedding="glove.twitter.27B.200d.txt"):
+class GloVeLoader():
+
+    def __init__(self):
 
         # Datasets
         self.data_loader = DataHandler()
@@ -71,25 +73,45 @@ class CentralGloVe():
 
         return self.w2vec, self.w2id
 
-    def transform_data(self):
-
-        self.X_train, self.Y_train = self.preprocessor.vectorize_data(self.trainset, self.w2vec)
-        self.X_test, self.Y_test = self.preprocessor.vectorize_data(self.testset, self.w2vec)
-        self.X_val, self.Y_val = self.preprocessor.vectorize_data(self.valset, self.w2vec)
+    def transform_data(self, model_variant="MLP"):
 
         # Insert TorchLoader
-        self.torch_train = TensorDataset(cast_to_float(self.X_train), cast_to_float(self.Y_train))
-        self.torch_val = TensorDataset(cast_to_float(self.X_val), cast_to_float(self.Y_val))
-        self.torch_test = TensorDataset(cast_to_float(self.X_test), cast_to_float(self.Y_test))
+        if model_variant == "MLP":
+            self.X_train, self.Y_train = self.preprocessor.vectorize_data(self.trainset, self.w2vec)
+            self.X_test, self.Y_test = self.preprocessor.vectorize_data(self.testset, self.w2vec)
+            self.X_val, self.Y_val = self.preprocessor.vectorize_data(self.valset, self.w2vec)
+
+            self.torch_train = TensorDataset(cast_to_float(self.X_train), cast_to_float(self.Y_train))
+            self.torch_val = TensorDataset(cast_to_float(self.X_val), cast_to_float(self.Y_val))
+            self.torch_test = TensorDataset(cast_to_float(self.X_test), cast_to_float(self.Y_test))
+
+        elif model_variant == "CNN":
+            self.X_train, self.Y_train = self.preprocessor.tokenize_data(self.trainset, self.w2id)
+            self.X_test, self.Y_test = self.preprocessor.tokenize_data(self.testset, self.w2id)
+            self.X_val, self.Y_val = self.preprocessor.tokenize_data(self.valset, self.w2id)
+
+            self.torch_train = TensorDataset(cast_to_int(self.X_train), cast_to_float(self.Y_train))
+            self.torch_val = TensorDataset(cast_to_int(self.X_val), cast_to_float(self.Y_val))
+            self.torch_test = TensorDataset(cast_to_int(self.X_test), cast_to_float(self.Y_test))
+
+        else:
+            raise KeyError("Please make sure to specify the correct model. Options are MLP and CNN.")
+
         return
 
-    def mlp_model(self):
+    def build_emb_matrix(self, trainset) -> Tuple[Dict, np.array]:
+        vocab = self.preprocessor.generate_vocab(trainset)
+        w2id, emb_mx = self.preprocessor.embed_vocab(voc=vocab, w2v=self.w2vec)
+
+        return w2id, emb_mx
+
+    def mlp_model(self, epochs=50):
 
         train = DataLoader(self.torch_train, shuffle=True, batch_size=self.batch_size)
         val = DataLoader(self.torch_val, shuffle=True, batch_size=self.batch_size)
         test = DataLoader(self.torch_test, shuffle=True, batch_size=self.batch_size)
 
-        mlp = NetMLP(input_size=200, layer_sizes=[128, 32], activation=nn.Tanh(), epochs=50, lr=0.0002,
+        mlp = NetMLP(input_size=200, layer_sizes=[128, 32], activation=nn.Tanh(), epochs=epochs, lr=0.0002,
                      l2reg=0.00005, dropout=0)
 
         mlp = mlp.cuda() if torch.cuda.is_available() else mlp
@@ -103,3 +125,24 @@ class CentralGloVe():
 
         print("MLP performance: ", perform)
         print("MLP Training & Testing done!")
+
+    def cnn_model(self):
+        train = DataLoader(self.torch_train, shuffle=True, batch_size=self.batch_size)
+        val = DataLoader(self.torch_val, shuffle=True, batch_size=self.batch_size)
+        test = DataLoader(self.torch_test, shuffle=True, batch_size=self.batch_size)
+
+        cnn = NetCNN(vocab_size=self.build_emb_matrix(trainset=train)[1].shape[0], emb_matrix=self.build_emb_matrix(trainset=train)[1],
+                     filter_size=[1, 2, 3, 5, 10], num_filter=8, emb_size=self.build_emb_matrix(trainset=train)[1].shape[1], emb_tune=False,
+                     epochs=150, lr=0.000002, l2reg=0.0003, dropout=0.1)
+
+        cnn = cnn.cuda() if torch.cuda.is_available() else cnn
+
+        print(cnn)
+        print(sum([np.prod(p.size()) for p in cnn.parameters()]) - np.prod(self.build_emb_matrix(trainset=train)[1].shape))
+
+        history = cnn.fit(train, val)
+        test_performance = cnn.eval_data(test)
+        print("Test performance: loss={:.3f}, accuracy={:.3f}, precision={:.3f}, recall={:.3f}, f1={:.3f}".format(
+            *[test_performance[m] for m in ['loss', 'accuracy', 'precision', 'recall', 'f1']]))
+
+

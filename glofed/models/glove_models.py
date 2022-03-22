@@ -35,9 +35,9 @@ class NetMLP(nn.Module):
 
         # Loss & optimization
         self.criterion = nn.BCELoss()
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.l2reg)
+        self.optimizer = torch.optim.SGD(lr=lr, weight_decay=l2reg, momentum=0.8, params=self.parameters())
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
         """
         Forward pass in MLP
         :param x:
@@ -50,7 +50,7 @@ class NetMLP(nn.Module):
 
         return x
 
-    def compute_loss(self, x, y):
+    def compute_loss(self, x, y) -> Tuple[float, float, float, float, float]:
         preds = self.forward(x)
         loss = self.criterion(preds, y)
 
@@ -59,7 +59,7 @@ class NetMLP(nn.Module):
 
         return loss, acc, prec, rec, f1
 
-    def eval_loader(self, loader):
+    def eval_loader(self, loader) -> Dict:
         metrics = {"loss": 0, "accuracy": 0, "precision": 0, "recall": 0, "f1": 0}
 
         for i, (x, y) in enumerate(loader):
@@ -75,7 +75,7 @@ class NetMLP(nn.Module):
 
         return metrics
 
-    def fit(self, trainset, values):
+    def fit(self, trainset, valset) -> Dict:
 
         history = {'loss': [], 'val_loss': [], 'accuracy': [], 'precision': [], 'val_accuracy': [], 'val_precision': [],
                    'recall': [], 'f1': [], 'val_recall': [], 'val_f1': []}
@@ -99,7 +99,7 @@ class NetMLP(nn.Module):
                 train_metrics[k] /= len(trainset)
                 history[k].append(train_metrics[k])
 
-            value_metrics = self.eval_loader(values)
+            value_metrics = self.eval_loader(valset)
 
             for k in value_metrics:
                 history['val_' + k].append(value_metrics[k])
@@ -108,7 +108,7 @@ class NetMLP(nn.Module):
                 verbose_debug_msg(
                     msg=f"Current epoch: {epoch}. Loss: {train_metrics['loss']}  -  "
                         f"Accuracy: {train_metrics['accuracy']}  -  Prec.: {train_metrics['precision']}  -  "
-                        f"Rec.: {train_metrics['recall']}  -  F1: {train_metrics['f1']}", level=1
+                        f"Rec.: {train_metrics['recall']}  -  F1: {train_metrics['f1']}", level=2
                 )
 
         return history
