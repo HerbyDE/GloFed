@@ -22,13 +22,13 @@
         name: virtualenv
 
     - name: Setup virtualenv
-      shell: virtualenv venv
+      shell: python3 -m venv ~/virt_env
       become_user: ubuntu
 
     - name: Install python requirements to virtual environment
       pip:
-        requirements: ~/fedglove/requirements.txt
-        virtualenv: ~/venv
+        requirements: ~/repos/GloFed/requirements.txt
+        virtualenv: ~/virt_env
         virtualenv_site_packages: yes
         virtualenv_python: python3
 
