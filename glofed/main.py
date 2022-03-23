@@ -1,5 +1,6 @@
 import os
-from client.glofed_client import FederatedMLPClient
+from client.glofed_client import FederatedMLPClient, FederatedCNNClient
+from client.glove_central import GloVeLoader
 
 
 # if __name__ == "__main__":
@@ -21,5 +22,11 @@ from client.glofed_client import FederatedMLPClient
 if __name__ == "__main__":
 
     os.environ["DEBUG_VERBOSITY"] = "1"
+    # gc = GloVeLoader()
+    # gc.load_datasets(trainset="training.1600000.processed.noemoticon.csv", testset="testdata.manual.2009.06.14.csv")
+    # gc.transform_data(model_variant="CNN")
+    # gc.load_embedding()
+    #
+    # gc.cnn_model()
 
     FederatedMLPClient().launch()

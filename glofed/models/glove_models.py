@@ -185,7 +185,7 @@ class NetCNN(nn.Module):
 
         return metrics
 
-    def fit(self, trainset, values) -> Dict:
+    def fit(self, trainset, valset) -> Dict:
 
         history = {'loss': [], 'val_loss': [], 'accuracy': [], 'precision': [], 'val_accuracy': [], 'val_precision': [],
                    'recall': [], 'f1': [], 'val_recall': [], 'val_f1': []}
@@ -209,7 +209,7 @@ class NetCNN(nn.Module):
                 train_metrics[k] /= len(trainset)
                 history[k].append(train_metrics[k])
 
-            value_metrics = self.eval_loader(values)
+            value_metrics = self.eval_loader(valset)
 
             for k in value_metrics:
                 history['val_' + k].append(value_metrics[k])

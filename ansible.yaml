@@ -1,0 +1,44 @@
+---
+
+- hosts: all
+  become: yes
+
+  tasks:
+    - name: Prepare environment
+      apt:
+        update_cache: yes
+        cache_valid_time: 86400
+
+    - name: Install required packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      become: yes
+      loop:
+        - python3-pip
+        - python-virtualenv
+        - virtualenvwrapper
+        - python3.9-dev
+        - git
+
+    - name: Clone git repo
+      git:
+        repo: git@gitlab.i13.in.tum.de:woi/fedglove.git
+        dest: ~/repos/
+        clone: yes
+        update: yes
+
+    - name: Setup virtualenv
+      shell: virtualenv venv
+
+    - name: Install python requirements to virtual environment
+      pip:
+        requirements: ~/fedglove/requirements.txt
+        virtualenv: ~/venv
+        virtualenv_site_packages: yes
+        virtualenv_python: python3.9
+
+    - name: Launch Federated Learning client
+      script: ~/fedglove/main.py
+
+

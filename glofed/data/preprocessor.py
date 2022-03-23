@@ -166,7 +166,7 @@ class PreProcessor(object):
 
     def vectorize_data(self, df: pd.DataFrame, w2v):
 
-        print(df.keys())
+        print("Keys:", df.keys())
 
         X = np.stack(
             df.tweet.apply(self.prep_tweet_text).apply(self.normalize_tweet).apply(lambda x: self.to_vector(x, w2v))

@@ -73,10 +73,11 @@ class GloVeLoader():
 
         return self.w2vec, self.w2id
 
-    def transform_data(self, model_variant="MLP"):
+    def transform_data(self, model_variant):
 
         # Insert TorchLoader
         if model_variant == "MLP":
+            print("In MLP branch")
             self.X_train, self.Y_train = self.preprocessor.vectorize_data(self.trainset, self.w2vec)
             self.X_test, self.Y_test = self.preprocessor.vectorize_data(self.testset, self.w2vec)
             self.X_val, self.Y_val = self.preprocessor.vectorize_data(self.valset, self.w2vec)
@@ -86,6 +87,7 @@ class GloVeLoader():
             self.torch_test = TensorDataset(cast_to_float(self.X_test), cast_to_float(self.Y_test))
 
         elif model_variant == "CNN":
+            print("In CNN branch")
             self.X_train, self.Y_train = self.preprocessor.tokenize_data(self.trainset, self.w2id)
             self.X_test, self.Y_test = self.preprocessor.tokenize_data(self.testset, self.w2id)
             self.X_val, self.Y_val = self.preprocessor.tokenize_data(self.valset, self.w2id)
@@ -130,10 +132,10 @@ class GloVeLoader():
         train = DataLoader(self.torch_train, shuffle=True, batch_size=self.batch_size)
         val = DataLoader(self.torch_val, shuffle=True, batch_size=self.batch_size)
         test = DataLoader(self.torch_test, shuffle=True, batch_size=self.batch_size)
+        emb = self.build_emb_matrix(trainset=self.trainset)
 
-        cnn = NetCNN(vocab_size=self.build_emb_matrix(trainset=train)[1].shape[0], emb_matrix=self.build_emb_matrix(trainset=train)[1],
-                     filter_size=[1, 2, 3, 5, 10], num_filter=8, emb_size=self.build_emb_matrix(trainset=train)[1].shape[1], emb_tune=False,
-                     epochs=150, lr=0.000002, l2reg=0.0003, dropout=0.1)
+        cnn = NetCNN(vocab_size=emb[1].shape[0], emb_matrix=emb[1], filter_size=[1, 2, 3, 5, 10], num_filter=8,
+                     emb_size=emb[1].shape[1], emb_tune=False, epochs=150, lr=0.000002, l2reg=0.0003, dropout=0.1)
 
         cnn = cnn.cuda() if torch.cuda.is_available() else cnn
 
