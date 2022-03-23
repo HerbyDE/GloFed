@@ -9,12 +9,34 @@
         update_cache: yes
         cache_valid_time: 86400
 
+    - name: Install GitLab SSH Key
+      copy:
+        src: /home/woi/.ssh/id_rsa
+        dest: ~/.ssh/
+      become: yes
+
+    - name: Install GitLab SSH Key
+      copy:
+        src: /home/woi/.ssh/id_rsa.pub
+        dest: ~/.ssh/
+      become: yes
+
     - name: Clone git repo
       git:
         repo: git@gitlab.i13.in.tum.de:woi/fedglove.git
         dest: ~/repos/
         clone: yes
         update: yes
+        key_file: ~/.ssh/id_rsa
+        accept_hostkey: yes
+        force: yes
+
+    - name: Remove SSH keys from client
+      file:
+        path: "{{ item  }}"
+      loop:
+        - /home/woi/.ssh/id_rsa
+        - /home/woi/.ssh/id_rsa.pub
 
     - name: Install virtualenv
       pip:
