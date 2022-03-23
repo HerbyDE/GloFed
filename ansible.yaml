@@ -1,7 +1,7 @@
 ---
 
 - hosts: all
-  become: yes
+  become_user: ubuntu
 
   tasks:
     - name: Prepare environment
@@ -15,7 +15,6 @@
         dest: ~/repos/GloFed
         clone: yes
         update: yes
-      become_user: ubuntu
 
     - name: Install virtualenv
       pip:
@@ -23,7 +22,6 @@
 
     - name: Setup virtualenv
       shell: python3 -m venv ~/virt_env
-      become_user: ubuntu
 
     - name: Install python requirements to virtual environment
       pip:
