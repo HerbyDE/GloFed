@@ -27,8 +27,6 @@
       pip:
         requirements: ~/repos/GloFed/requirements.txt
         virtualenv: ~/virt_env
-        virtualenv_site_packages: yes
-        virtualenv_python: python3
 
     - name: Launch Federated Learning client
       script: ~/fedglove/main.py
