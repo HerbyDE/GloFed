@@ -12,9 +12,10 @@
     - name: Clone git repo
       git:
         repo: https://github.com/HerbyDE/GloFed.git
-        dest: ~/repos/
+        dest: ~/repos/GloFed
         clone: yes
         update: yes
+      become_user: ubuntu
 
     - name: Install virtualenv
       pip:
@@ -22,6 +23,7 @@
 
     - name: Setup virtualenv
       shell: virtualenv venv
+      become_user: ubuntu
 
     - name: Install python requirements to virtual environment
       pip:
